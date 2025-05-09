@@ -1,0 +1,414 @@
+[
+    {
+      "weights": [
+        {
+          "name": "dense0/conv0/filters",
+          "shape": [3, 3, 3, 32],
+          "dtype": "float32",
+          "quantization": {
+            "dtype": "uint8",
+            "scale": 0.00579301469466266,
+            "min": -0.712540807443507
+          }
+        },
+        {
+          "name": "dense0/conv0/bias",
+          "shape": [32],
+          "dtype": "float32"
+        },
+        {
+          "name": "dense0/conv1/depthwise_filter",
+          "shape": [3, 3, 32, 1],
+          "dtype": "float32",
+          "quantization": {
+            "dtype": "uint8",
+            "scale": 0.00647371983995625,
+            "min": -0.640898264155668
+          }
+        },
+        {
+          "name": "dense0/conv1/pointwise_filter",
+          "shape": [1, 1, 32, 32],
+          "dtype": "float32",
+          "quantization": {
+            "dtype": "uint8",
+            "scale": 0.0105095793219174,
+            "min": -1.40828362913693
+          }
+        },
+        {
+          "name": "dense0/conv1/bias",
+          "shape": [32],
+          "dtype": "float32"
+        },
+        {
+          "name": "dense0/conv2/depthwise_filter",
+          "shape": [3, 3, 32, 1],
+          "dtype": "float32",
+          "quantization": {
+            "dtype": "uint8",
+            "scale": 0.005666389652327,
+            "min": -0.725297875497855
+          }
+        },
+        {
+          "name": "dense0/conv2/pointwise_filter",
+          "shape": [1, 1, 32, 32],
+          "dtype": "float32",
+          "quantization": {
+            "dtype": "uint8",
+            "scale": 0.0103160792706059,
+            "min": -1.17603303684908
+          }
+        },
+        {
+          "name": "dense0/conv2/bias",
+          "shape": [32],
+          "dtype": "float32"
+        },
+        {
+          "name": "dense0/conv3/depthwise_filter",
+          "shape": [3, 3, 32, 1],
+          "dtype": "float32",
+          "quantization": {
+            "dtype": "uint8",
+            "scale": 0.00632203209633921,
+            "min": -0.853474333005793
+          }
+        },
+        {
+          "name": "dense0/conv3/pointwise_filter",
+          "shape": [1, 1, 32, 32],
+          "dtype": "float32",
+          "quantization": {
+            "dtype": "uint8",
+            "scale": 0.0103227853775024,
+            "min": -1.46583552360535
+          }
+        },
+        {
+          "name": "dense0/conv3/bias",
+          "shape": [32],
+          "dtype": "float32"
+        },
+        {
+          "name": "dense1/conv0/depthwise_filter",
+          "shape": [3, 3, 32, 1],
+          "dtype": "float32",
+          "quantization": {
+            "dtype": "uint8",
+            "scale": 0.00425315277249205,
+            "min": -0.574175624286427
+          }
+        },
+        {
+          "name": "dense1/conv0/pointwise_filter",
+          "shape": [1, 1, 32, 64],
+          "dtype": "float32",
+          "quantization": {
+            "dtype": "uint8",
+            "scale": 0.0106533396477793,
+            "min": -1.1825207009035
+          }
+        },
+        {
+          "name": "dense1/conv0/bias",
+          "shape": [64],
+          "dtype": "float32"
+        },
+        {
+          "name": "dense1/conv1/depthwise_filter",
+          "shape": [3, 3, 64, 1],
+          "dtype": "float32",
+          "quantization": {
+            "dtype": "uint8",
+            "scale": 0.00516693101209753,
+            "min": -0.635532514487996
+          }
+        },
+        {
+          "name": "dense1/conv1/pointwise_filter",
+          "shape": [1, 1, 64, 64],
+          "dtype": "float32",
+          "quantization": {
+            "dtype": "uint8",
+            "scale": 0.011478300188102,
+            "min": -1.38887432276034
+          }
+        },
+        {
+          "name": "dense1/conv1/bias",
+          "shape": [64],
+          "dtype": "float32"
+        },
+        {
+          "name": "dense1/conv2/depthwise_filter",
+          "shape": [3, 3, 64, 1],
+          "dtype": "float32",
+          "quantization": {
+            "dtype": "uint8",
+            "scale": 0.00614482141008564,
+            "min": -0.847985354591819
+          }
+        },
+        {
+          "name": "dense1/conv2/pointwise_filter",
+          "shape": [1, 1, 64, 64],
+          "dtype": "float32",
+          "quantization": {
+            "dtype": "uint8",
+            "scale": 0.0105419673171698,
+            "min": -1.38099771854924
+          }
+        },
+        {
+          "name": "dense1/conv2/bias",
+          "shape": [64],
+          "dtype": "float32"
+        },
+        {
+          "name": "dense1/conv3/depthwise_filter",
+          "shape": [3, 3, 64, 1],
+          "dtype": "float32",
+          "quantization": {
+            "dtype": "uint8",
+            "scale": 0.00576984484990438,
+            "min": -0.686611537138621
+          }
+        },
+        {
+          "name": "dense1/conv3/pointwise_filter",
+          "shape": [1, 1, 64, 64],
+          "dtype": "float32",
+          "quantization": {
+            "dtype": "uint8",
+            "scale": 0.0109390955345303,
+            "min": -1.26893508200552
+          }
+        },
+        {
+          "name": "dense1/conv3/bias",
+          "shape": [64],
+          "dtype": "float32"
+        },
+        {
+          "name": "dense2/conv0/depthwise_filter",
+          "shape": [3, 3, 64, 1],
+          "dtype": "float32",
+          "quantization": {
+            "dtype": "uint8",
+            "scale": 0.00377693082772049,
+            "min": -0.407908529393813
+          }
+        },
+        {
+          "name": "dense2/conv0/pointwise_filter",
+          "shape": [1, 1, 64, 128],
+          "dtype": "float32",
+          "quantization": {
+            "dtype": "uint8",
+            "scale": 0.0118866719451605,
+            "min": -1.43828730536442
+          }
+        },
+        {
+          "name": "dense2/conv0/bias",
+          "shape": [128],
+          "dtype": "float32"
+        },
+        {
+          "name": "dense2/conv1/depthwise_filter",
+          "shape": [3, 3, 128, 1],
+          "dtype": "float32",
+          "quantization": {
+            "dtype": "uint8",
+            "scale": 0.00649704582550946,
+            "min": -0.838118911490721
+          }
+        },
+        {
+          "name": "dense2/conv1/pointwise_filter",
+          "shape": [1, 1, 128, 128],
+          "dtype": "float32",
+          "quantization": {
+            "dtype": "uint8",
+            "scale": 0.0116321989134246,
+            "min": -1.33770287504383
+          }
+        },
+        {
+          "name": "dense2/conv1/bias",
+          "shape": [128],
+          "dtype": "float32"
+        },
+        {
+          "name": "dense2/conv2/depthwise_filter",
+          "shape": [3, 3, 128, 1],
+          "dtype": "float32",
+          "quantization": {
+            "dtype": "uint8",
+            "scale": 0.00594718222524606,
+            "min": -0.796922418182972
+          }
+        },
+        {
+          "name": "dense2/conv2/pointwise_filter",
+          "shape": [1, 1, 128, 128],
+          "dtype": "float32",
+          "quantization": {
+            "dtype": "uint8",
+            "scale": 0.0114368443395577,
+            "min": -1.45247923112383
+          }
+        },
+        {
+          "name": "dense2/conv2/bias",
+          "shape": [128],
+          "dtype": "float32"
+        },
+        {
+          "name": "dense2/conv3/depthwise_filter",
+          "shape": [3, 3, 128, 1],
+          "dtype": "float32",
+          "quantization": {
+            "dtype": "uint8",
+            "scale": 0.00666543268689922,
+            "min": -0.899833412731395
+          }
+        },
+        {
+          "name": "dense2/conv3/pointwise_filter",
+          "shape": [1, 1, 128, 128],
+          "dtype": "float32",
+          "quantization": {
+            "dtype": "uint8",
+            "scale": 0.0128342142292098,
+            "min": -1.64277942133885
+          }
+        },
+        {
+          "name": "dense2/conv3/bias",
+          "shape": [128],
+          "dtype": "float32"
+        },
+        {
+          "name": "dense3/conv0/depthwise_filter",
+          "shape": [3, 3, 128, 1],
+          "dtype": "float32",
+          "quantization": {
+            "dtype": "uint8",
+            "scale": 0.00471169995326622,
+            "min": -0.673773093317069
+          }
+        },
+        {
+          "name": "dense3/conv0/pointwise_filter",
+          "shape": [1, 1, 128, 256],
+          "dtype": "float32",
+          "quantization": {
+            "dtype": "uint8",
+            "scale": 0.0109559648177203,
+            "min": -1.39140753185048
+          }
+        },
+        {
+          "name": "dense3/conv0/bias",
+          "shape": [256],
+          "dtype": "float32"
+        },
+        {
+          "name": "dense3/conv1/depthwise_filter",
+          "shape": [3, 3, 256, 1],
+          "dtype": "float32",
+          "quantization": {
+            "dtype": "uint8",
+            "scale": 0.00554193468654857,
+            "min": -0.714909574564766
+          }
+        },
+        {
+          "name": "dense3/conv1/pointwise_filter",
+          "shape": [1, 1, 256, 256],
+          "dtype": "float32",
+          "quantization": {
+            "dtype": "uint8",
+            "scale": 0.0167903722501269,
+            "min": -2.48497509301878
+          }
+        },
+        {
+          "name": "dense3/conv1/bias",
+          "shape": [256],
+          "dtype": "float32"
+        },
+        {
+          "name": "dense3/conv2/depthwise_filter",
+          "shape": [3, 3, 256, 1],
+          "dtype": "float32",
+          "quantization": {
+            "dtype": "uint8",
+            "scale": 0.00636154062607709,
+            "min": -0.814277200137868
+          }
+        },
+        {
+          "name": "dense3/conv2/pointwise_filter",
+          "shape": [1, 1, 256, 256],
+          "dtype": "float32",
+          "quantization": {
+            "dtype": "uint8",
+            "scale": 0.0177732967862896,
+            "min": -1.7062364914838
+          }
+        },
+        {
+          "name": "dense3/conv2/bias",
+          "shape": [256],
+          "dtype": "float32"
+        },
+        {
+          "name": "dense3/conv3/depthwise_filter",
+          "shape": [3, 3, 256, 1],
+          "dtype": "float32",
+          "quantization": {
+            "dtype": "uint8",
+            "scale": 0.00690027592228908,
+            "min": -0.862534490286135
+          }
+        },
+        {
+          "name": "dense3/conv3/pointwise_filter",
+          "shape": [1, 1, 256, 256],
+          "dtype": "float32",
+          "quantization": {
+            "dtype": "uint8",
+            "scale": 0.0154499367171643,
+            "min": -1.90034221621121
+          }
+        },
+        {
+          "name": "dense3/conv3/bias",
+          "shape": [256],
+          "dtype": "float32"
+        },
+        {
+          "name": "fc/weights",
+          "shape": [256, 7],
+          "dtype": "float32",
+          "quantization": {
+            "dtype": "uint8",
+            "scale": 0.00483427655463125,
+            "min": -0.720307206640057
+          }
+        },
+        {
+          "name": "fc/bias",
+          "shape": [7],
+          "dtype": "float32"
+        }
+      ],
+      "paths": [
+        "face_expression_model-shard1"
+      ]
+    }
+  ]
