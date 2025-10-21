@@ -1,121 +1,217 @@
 import React, { useRef, useState, useEffect } from 'react';
-import * as faceapi from 'face-api.js';
-import './App.css';
-
-const MOVIES = {
-  Happy: {
-    name: 'Welcome',
-    link: 'https://www.primevideo.com/detail/0MJFLZHIV04F9V9V21RAY2Z8ZZ/',
-    thumbnail:
-      'https://m.media-amazon.com/images/S/pv-target-images/af13e1c59556eb143d2b213c9f95567677f409033d4c9619c553367d71bee982._SX1920_FMwebp_.jpg',
-  },
-  Sad: {
-    name: 'Call me Bae',
-    link: 'https://www.primevideo.com/detail/0TF2BODX83KZOWTP08NXFE897E/',
-    thumbnail:
-      'https://m.media-amazon.com/images/S/pv-target-images/0cb7ac74d1d6e8eb2e3d59aa5354359714eb54d84fcfaa616d9de19d64b492ca._SX1920_FMwebp_.jpg',
-  },
-  Excited: {
-    name: 'Citadel Honey Bunny',
-    link: 'https://www.primevideo.com/detail/0KYRVT4JDB957NXZO72E2MIFW5',
-    thumbnail:
-      'https://m.media-amazon.com/images/S/pv-target-images/51c2c75da778c109ccc33ff293ff48f0cccc60b18c3fef8a42afe2a80e07acac._SX1920_FMwebp_.jpg',
-  },
-  Neutral: {
-    name: 'Farzi',
-    link: 'https://www.primevideo.com/detail/0HDHQAUF5LPWOJRCO025LFJSJI',
-    thumbnail:
-      'https://m.media-amazon.com/images/S/pv-target-images/8aed532f0875925f72c4012aab688ed409773ecbfb3b18e1a39cd9ad1a4dd485._SX1920_FMwebp_.jpg',
-  },
-  Angry: {
-    name: 'Agneepath',
-    link: 'https://www.primevideo.com/detail/0NU7IFXPL2WWSDHNGAR5Z1GUJE/',
-    thumbnail:
-      'https://images-eu.ssl-images-amazon.com/images/S/pv-target-images/1863426056ae862def9a69ca76e8af54cdb6b8a5a2be1100e096e59b00060847._UX1920_.png',
-  },
-};
-
-const MOODS = ['Happy', 'Excited', 'Neutral', 'Angry', 'Sad'];
-
-// Map face-api.js expressions to our moods
-const mapExpressionToMood = (expressions) => {
-  if (!expressions) return 'Neutral';
-  const sorted = Object.entries(expressions).sort((a, b) => b[1] - a[1]);
-  const top = sorted[0][0];
-  switch (top) {
-    case 'happy':
-      return 'Happy';
-    case 'surprised':
-      return 'Excited';
-    case 'angry':
-      return 'Angry';
-    case 'sad':
-      return 'Sad';
-    case 'neutral':
-      return 'Neutral';
-    case 'fearful':
-      return 'Sad';
-    case 'disgusted':
-      return 'Angry';
-    default:
-      return 'Neutral';
-  }
-};
 
 function App() {
   const [step, setStep] = useState('welcome');
-  const [mood, setMood] = useState(null);
-  const [selectedMood, setSelectedMood] = useState('');
   const [videoAllowed, setVideoAllowed] = useState(false);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
-  const [modelsLoaded, setModelsLoaded] = useState(false);
-  const [modelError, setModelError] = useState('');
-  const [debugLog, setDebugLog] = useState([]);
+  const [detectionResult, setDetectionResult] = useState(null);
+  const [capturedImage, setCapturedImage] = useState(null);
+  const [faceDetectionReady, setFaceDetectionReady] = useState(false);
   const videoRef = useRef();
   const canvasRef = useRef();
-  const [scanBarPos, setScanBarPos] = useState(0);
-  const scanBarInterval = useRef(null);
   const [stream, setStream] = useState(null);
 
-  const log = (msg) => {
-    setDebugLog((prev) => [...prev, `[${new Date().toLocaleTimeString()}] ${msg}`]);
-    console.log(msg);
-  };
-
-  // Load face-api.js models on mount
+  // Check if browser supports face detection
   useEffect(() => {
-    const loadModels = async () => {
+    const checkFaceDetection = async () => {
       setLoading(true);
-      setModelError('');
-      log('Loading face-api.js models...');
-      try {
-        await faceapi.nets.tinyFaceDetector.loadFromUri('/models');
-        await faceapi.nets.faceExpressionNet.loadFromUri('/models');
-        setModelsLoaded(true);
-        log('Models loaded successfully.');
-      } catch (e) {
-        setModelError('Failed to load face detection models.\nMake sure you have the required files in public/models.');
-        log('Model loading error: ' + e);
+      
+      // Check if FaceDetector API is available (Chrome/Edge only)
+      if ('FaceDetector' in window) {
+        try {
+          const faceDetector = new window.FaceDetector();
+          setFaceDetectionReady(true);
+          console.log('Using native FaceDetector API');
+        } catch (e) {
+          console.log('FaceDetector not supported, using fallback');
+          setFaceDetectionReady(true); // Use fallback method
+        }
+      } else {
+        console.log('FaceDetector not available, using fallback');
+        setFaceDetectionReady(true); // Use fallback method
       }
+      
       setLoading(false);
     };
-    loadModels();
+    
+    checkFaceDetection();
   }, []);
+
+  // Face detection using browser API or fallback
+  const detectFaces = async (imageElement) => {
+    if ('FaceDetector' in window) {
+      try {
+        const faceDetector = new window.FaceDetector({
+          maxDetectedFaces: 10,
+          fastMode: false
+        });
+        
+        const faces = await faceDetector.detect(imageElement);
+        return faces;
+      } catch (e) {
+        console.log('FaceDetector failed, using fallback:', e);
+        return await fallbackFaceDetection(imageElement);
+      }
+    } else {
+      return await fallbackFaceDetection(imageElement);
+    }
+  };
+
+  // Fallback face detection using image analysis
+  const fallbackFaceDetection = async (canvas) => {
+    return new Promise((resolve) => {
+      const ctx = canvas.getContext('2d');
+      const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
+      const data = imageData.data;
+      
+      // Simple face detection based on skin tone detection and face-like patterns
+      let skinPixels = 0;
+      let totalPixels = data.length / 4;
+      let faceRegions = [];
+      
+      // Analyze image in 50x50 pixel blocks to find potential face regions
+      const blockSize = 50;
+      const minSkinRatio = 0.3; // Minimum ratio of skin-colored pixels for a potential face
+      
+      for (let y = 0; y < canvas.height - blockSize; y += blockSize) {
+        for (let x = 0; x < canvas.width - blockSize; x += blockSize) {
+          let blockSkinPixels = 0;
+          let blockTotalPixels = 0;
+          
+          // Check each pixel in this block
+          for (let by = y; by < Math.min(y + blockSize, canvas.height); by++) {
+            for (let bx = x; bx < Math.min(x + blockSize, canvas.width); bx++) {
+              const i = (by * canvas.width + bx) * 4;
+              const r = data[i];
+              const g = data[i + 1];
+              const b = data[i + 2];
+              
+              // Simple skin tone detection
+              if (isSkinTone(r, g, b)) {
+                blockSkinPixels++;
+                skinPixels++;
+              }
+              blockTotalPixels++;
+            }
+          }
+          
+          // If this block has enough skin-colored pixels, it might be a face
+          const skinRatio = blockSkinPixels / blockTotalPixels;
+          if (skinRatio > minSkinRatio && blockSkinPixels > 100) {
+            faceRegions.push({
+              x: x,
+              y: y,
+              width: blockSize,
+              height: blockSize,
+              confidence: skinRatio
+            });
+          }
+        }
+      }
+      
+      // Merge overlapping regions and filter out small regions
+      const mergedRegions = mergeOverlappingRegions(faceRegions);
+      
+      // Filter based on size and confidence
+      const validFaces = mergedRegions.filter(region => 
+        region.confidence > 0.4 && 
+        (region.width * region.height) > 1000
+      );
+      
+      setTimeout(() => resolve(validFaces), 500); // Simulate processing time
+    });
+  };
+
+  // Check if RGB values represent skin tone
+  const isSkinTone = (r, g, b) => {
+    // Extended skin tone detection for various ethnicities
+    const skinConditions = [
+      // Light skin tones
+      (r > 95 && g > 40 && b > 20 && 
+       Math.max(r, g, b) - Math.min(r, g, b) > 15 && 
+       Math.abs(r - g) > 15 && r > g && r > b),
+      
+      // Medium skin tones  
+      (r > 80 && r < 220 && g > 50 && g < 180 && b > 30 && b < 150 &&
+       r > g && g > b && r - g > 10),
+       
+      // Darker skin tones
+      (r > 45 && r < 120 && g > 30 && g < 100 && b > 20 && b < 80 &&
+       r > g && g >= b && (r - g) > 5),
+       
+      // Asian skin tones
+      (r > 100 && r < 200 && g > 80 && g < 170 && b > 60 && b < 140 &&
+       Math.abs(r - g) < 30 && r > b && g > b)
+    ];
+    
+    return skinConditions.some(condition => condition);
+  };
+
+  // Merge overlapping face regions
+  const mergeOverlappingRegions = (regions) => {
+    if (regions.length <= 1) return regions;
+    
+    const merged = [];
+    const used = new Array(regions.length).fill(false);
+    
+    for (let i = 0; i < regions.length; i++) {
+      if (used[i]) continue;
+      
+      let currentRegion = { ...regions[i] };
+      used[i] = true;
+      
+      // Check for overlapping regions
+      for (let j = i + 1; j < regions.length; j++) {
+        if (used[j]) continue;
+        
+        if (regionsOverlap(currentRegion, regions[j])) {
+          // Merge regions
+          const newX = Math.min(currentRegion.x, regions[j].x);
+          const newY = Math.min(currentRegion.y, regions[j].y);
+          const newWidth = Math.max(currentRegion.x + currentRegion.width, regions[j].x + regions[j].width) - newX;
+          const newHeight = Math.max(currentRegion.y + currentRegion.height, regions[j].y + regions[j].height) - newY;
+          
+          currentRegion = {
+            x: newX,
+            y: newY,
+            width: newWidth,
+            height: newHeight,
+            confidence: Math.max(currentRegion.confidence, regions[j].confidence)
+          };
+          used[j] = true;
+        }
+      }
+      
+      merged.push(currentRegion);
+    }
+    
+    return merged;
+  };
+
+  // Check if two regions overlap
+  const regionsOverlap = (region1, region2) => {
+    return !(region1.x + region1.width < region2.x ||
+             region2.x + region2.width < region1.x ||
+             region1.y + region1.height < region2.y ||
+             region2.y + region2.height < region1.y);
+  };
 
   // Start camera
   const startCamera = async () => {
     setError('');
-    log('Requesting camera access...');
     try {
-      const mediaStream = await navigator.mediaDevices.getUserMedia({ video: true });
-      log('Camera stream received.');
+      const mediaStream = await navigator.mediaDevices.getUserMedia({ 
+        video: { 
+          width: { ideal: 640 },
+          height: { ideal: 480 }
+        } 
+      });
       setStream(mediaStream);
       setVideoAllowed(true);
     } catch (e) {
-      setError('Camera access denied.');
+      setError('Camera access denied. Please allow camera access and try again.');
       setVideoAllowed(false);
-      log('Camera access denied: ' + e);
     }
   };
 
@@ -123,7 +219,6 @@ function App() {
   useEffect(() => {
     if (videoAllowed && videoRef.current && stream) {
       videoRef.current.srcObject = stream;
-      log('Video element srcObject set in useEffect.');
     }
   }, [videoAllowed, stream]);
 
@@ -133,219 +228,268 @@ function App() {
       const tracks = videoRef.current.srcObject.getTracks();
       tracks.forEach((track) => track.stop());
       videoRef.current.srcObject = null;
-      log('Camera stopped and srcObject cleared.');
     }
     if (stream) {
       stream.getTracks().forEach((track) => track.stop());
       setStream(null);
-      log('Stream tracks stopped and stream cleared.');
     }
     setVideoAllowed(false);
   };
 
-  // Detect mood using face-api.js
-  const detectMood = async (imageElement) => {
-    if (!modelsLoaded) return 'Neutral';
-    try {
-      const detection = await faceapi
-        .detectSingleFace(imageElement, new faceapi.TinyFaceDetectorOptions())
-        .withFaceExpressions();
-      if (!detection || !detection.expressions) return 'Neutral';
-      return mapExpressionToMood(detection.expressions);
-    } catch {
-      return 'Neutral';
-    }
-  };
-
-  // Handle "Check My Mood"
-  const handleCheckMood = async () => {
-    setStep('scanning');
+  // Capture picture and detect faces
+  const handleCapturePicture = async () => {
     setLoading(true);
-    setScanBarPos(0);
-    log('Starting face scan...');
-    scanBarInterval.current = setInterval(() => {
-      setScanBarPos((pos) => (pos < 85 ? pos + 5 : 0));
-    }, 60);
+    setDetectionResult(null);
+    setError('');
+    
     const video = videoRef.current;
     const canvas = canvasRef.current;
+    
     if (video && canvas) {
+      // Set canvas size to match video
+      canvas.width = video.videoWidth || 640;
+      canvas.height = video.videoHeight || 480;
+      
       const ctx = canvas.getContext('2d');
-      ctx.drawImage(video, 0, 0, 220, 220);
-      log('Captured image from video to canvas.');
+      ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
+      
+      // Convert canvas to image URL for display
+      const imageDataUrl = canvas.toDataURL('image/jpeg', 0.9);
+      setCapturedImage(imageDataUrl);
+      
       try {
-        const detectedMood = await detectMood(canvas);
-        setMood(MOVIES[detectedMood] ? detectedMood : 'Neutral');
-        log('Detected mood: ' + detectedMood);
+        // Detect faces
+        const detections = await detectFaces(canvas);
+        const faceCount = detections.length;
+        
+        let result;
+        if (faceCount === 0) {
+          result = { type: 'no_face', count: 0 };
+        } else if (faceCount === 1) {
+          result = { type: 'single_face', count: 1 };
+        } else {
+          result = { type: 'multiple_faces', count: faceCount };
+        }
+        
+        setDetectionResult(result);
+        
       } catch (e) {
-        setMood('Neutral');
-        log('Face detection error: ' + e);
+        console.error('Face detection failed:', e);
+        setError('Face detection failed. Please ensure good lighting and try again.');
+        setDetectionResult({ type: 'error', count: 0 });
       }
     } else {
-      setMood('Neutral');
-      log('Video or canvas not available for face scan.');
+      setError('Camera not available. Please try again.');
     }
-    clearInterval(scanBarInterval.current);
+    
     setLoading(false);
     setStep('result');
     stopCamera();
-  };
-
-  // Handle manual mood selection
-  const handleManualMood = () => {
-    setMood(selectedMood);
-    setStep('result');
   };
 
   // Reset to start
-  const handleScanAgain = () => {
-    setMood(null);
-    setSelectedMood('');
+  const handleTryAgain = () => {
+    setDetectionResult(null);
+    setCapturedImage(null);
     setStep('welcome');
     setError('');
-    setScanBarPos(0);
     setLoading(false);
     stopCamera();
   };
 
-  // UI Components
+  // Get result message based on detection
+  const getResultMessage = () => {
+    if (!detectionResult) return '';
+    
+    switch (detectionResult.type) {
+      case 'no_face':
+        return 'No face detected in the image. Please try again with your face clearly visible in good lighting.';
+      case 'single_face':
+        return 'Face detected successfully! ✅';
+      case 'multiple_faces':
+        return `Multiple faces detected (${detectionResult.count} faces). Please ensure only one person is in the frame.`;
+      case 'error':
+        return 'Face detection failed. Please try again.';
+      default:
+        return 'Unknown detection result.';
+    }
+  };
+
+  const getResultColor = () => {
+    if (!detectionResult) return '#fff';
+    
+    switch (detectionResult.type) {
+      case 'no_face':
+        return '#ff4d4f';
+      case 'single_face':
+        return '#52c41a';
+      case 'multiple_faces':
+        return '#faad14';
+      case 'error':
+        return '#ff4d4f';
+      default:
+        return '#fff';
+    }
+  };
+
   return (
-    <div className="ad-container">
-      {/* Prime Video Logo */}
-      <img
-        src="https://upload.wikimedia.org/wikipedia/commons/1/11/Amazon_Prime_Video_logo.svg"
-        alt="Prime Video"
-        className="prime-logo"
-      />
-      {/* Loading models or error */}
-      {!modelsLoaded && (
-        <div className="ad-title">
-          {modelError ? (
-            <>
-              <div style={{ color: '#ff4d4f', marginBottom: 8 }}>{modelError}</div>
-              <div style={{ fontSize: '0.95em', color: '#fff' }}>
-                Download the required model files from <a href="https://justadudewhohacks.github.io/face-api.js/models/" target="_blank" rel="noopener noreferrer" style={{ color: '#0f79af' }}>here</a> and place them in <b>public/models</b>.<br />
-                Then restart your dev server and reload this page.
-              </div>
-              <button className="main-btn" style={{ marginTop: 16 }} onClick={() => window.location.reload()}>Retry</button>
-            </>
-          ) : (
-            'Loading face detection models...'
-          )}
+    <div style={{
+      minHeight: '100vh',
+      backgroundColor: '#0f1419',
+      color: 'white',
+      display: 'flex',
+      flexDirection: 'column',
+      alignItems: 'center',
+      justifyContent: 'center',
+      fontFamily: 'Arial, sans-serif',
+      padding: '20px'
+    }}>
+      
+      {/* Loading */}
+      {!faceDetectionReady && (
+        <div style={{ textAlign: 'center' }}>
+          <div style={{ fontSize: '20px' }}>
+            Initializing face detection...
+          </div>
+          <div style={{ marginTop: '10px', fontSize: '14px', color: '#888' }}>
+            Setting up detection algorithms
+          </div>
         </div>
       )}
-      {/* Welcome / Camera Screen */}
-      {modelsLoaded && step === 'welcome' && (
-        <>
-          <div className="face-frame">
+
+      {/* Camera Screen */}
+      {faceDetectionReady && step === 'welcome' && (
+        <div style={{ textAlign: 'center', maxWidth: '400px' }}>
+          <h1 style={{ marginBottom: '30px', fontSize: '24px' }}>
+            Face Detection Test
+          </h1>
+          
+          <div style={{
+            width: '300px',
+            height: '300px',
+            border: '3px solid #0f79af',
+            borderRadius: '10px',
+            overflow: 'hidden',
+            margin: '0 auto 20px',
+            backgroundColor: '#1a1a1a',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center'
+          }}>
             {videoAllowed ? (
               <video
                 ref={videoRef}
-                width={220}
-                height={220}
+                width={300}
+                height={300}
                 autoPlay
                 playsInline
                 muted
-                className="video-feed"
-                onLoadedData={() => setError('')}
-                onError={() => setError('Camera stream failed to display. Try refreshing or check your camera.')}
+                style={{ objectFit: 'cover' }}
+                onError={() => setError('Camera stream failed. Please refresh and try again.')}
               />
             ) : (
-              <img
-                src="https://randomuser.me/api/portraits/women/44.jpg"
-                alt="face placeholder"
-                className="face-placeholder"
-              />
+              <div style={{ color: '#666', textAlign: 'center' }}>
+                <div style={{ fontSize: '40px', marginBottom: '10px' }}>📷</div>
+                <div>Camera not active</div>
+              </div>
             )}
-            <canvas ref={canvasRef} width={220} height={220} style={{ display: 'none' }} />
+            <canvas ref={canvasRef} style={{ display: 'none' }} />
           </div>
-          <div className="ad-title">Smile, frown, or just stare,<br />We will read your face!</div>
-          {error && <div className="error-msg">{error}</div>}
+
+          {error && (
+            <div style={{ color: '#ff4d4f', marginBottom: '16px', fontSize: '14px' }}>
+              {error}
+            </div>
+          )}
+
           <button
-            className="main-btn"
-            onClick={() => {
-              if (!videoAllowed) startCamera();
-              else handleCheckMood();
+            onClick={videoAllowed ? handleCapturePicture : startCamera}
+            disabled={loading}
+            style={{
+              backgroundColor: loading ? '#666' : '#0f79af',
+              color: 'white',
+              border: 'none',
+              padding: '15px 30px',
+              borderRadius: '6px',
+              fontSize: '16px',
+              cursor: loading ? 'not-allowed' : 'pointer',
+              marginBottom: '16px',
+              width: '200px'
             }}
           >
-            {videoAllowed ? 'CHECK MY MOOD' : 'ALLOW CAMERA'}
+            {loading ? 'Detecting...' : (videoAllowed ? 'CAPTURE PICTURE' : 'START CAMERA')}
           </button>
-          <div
-            className="choose-mood-link"
-            onClick={() => {
-              stopCamera();
-              setStep('manual');
-            }}
-          >
-            No Pic? No problem! choose your mood
+
+          <div style={{ fontSize: '14px', color: '#888' }}>
+            {videoAllowed ? 'Position your face in the frame and click capture' : 'Click to start your camera'}
           </div>
-        </>
-      )}
-      {/* Scanning Animation */}
-      {modelsLoaded && step === 'scanning' && (
-        <div className="face-frame scanning">
-          <img
-            src="https://randomuser.me/api/portraits/women/44.jpg"
-            alt="face placeholder"
-            className="face-placeholder"
-          />
-          <div
-            className="scan-bar"
-            style={{ top: `${scanBarPos}%` }}
-          ></div>
-          <div className="scanning-text">Scanning your face...</div>
-        </div>
-      )}
-      {/* Manual Mood Selection */}
-      {modelsLoaded && step === 'manual' && (
-        <div className="manual-mood">
-          <div className="ad-title">How would you describe your mood?</div>
-          <div className="mood-list">
-            {MOODS.map((m) => (
-              <button
-                key={m}
-                className={`mood-btn${selectedMood === m ? ' selected' : ''}`}
-                onClick={() => setSelectedMood(m)}
-              >
-                {m}
-              </button>
-            ))}
-          </div>
-          <button
-            className="main-btn"
-            disabled={!selectedMood}
-            onClick={handleManualMood}
-          >
-            THIS IS MY MOOD
-          </button>
-          <div className="choose-mood-link" onClick={handleScanAgain}>
-            Back to face scan
+          
+          <div style={{ fontSize: '12px', color: '#666', marginTop: '10px' }}>
+            {'FaceDetector' in window ? 'Using browser face detection API' : 'Using custom face detection'}
           </div>
         </div>
       )}
-      {/* Result / Movie Recommendation */}
-      {modelsLoaded && step === 'result' && mood && (
-        <div className="result-screen">
-          <div className="ad-title">
-            Hey! You're in a <span className={`mood-text ${mood}`}>{mood}</span> mood<br />and we got stories to match!
+
+      {/* Result Screen */}
+      {faceDetectionReady && step === 'result' && (
+        <div style={{ textAlign: 'center', maxWidth: '500px' }}>
+          <h1 style={{ marginBottom: '30px', fontSize: '24px' }}>
+            Detection Result
+          </h1>
+
+          {capturedImage && (
+            <div style={{
+              width: '300px',
+              height: '300px',
+              border: '3px solid #0f79af',
+              borderRadius: '10px',
+              overflow: 'hidden',
+              margin: '0 auto 20px',
+              backgroundColor: '#1a1a1a'
+            }}>
+              <img 
+                src={capturedImage} 
+                alt="Captured" 
+                style={{ width: '100%', height: '100%', objectFit: 'cover' }}
+              />
+            </div>
+          )}
+
+          <div style={{
+            fontSize: '18px',
+            marginBottom: '30px',
+            padding: '20px',
+            borderRadius: '10px',
+            backgroundColor: '#1a1a1a',
+            border: `2px solid ${getResultColor()}`,
+            color: getResultColor()
+          }}>
+            {getResultMessage()}
           </div>
-          <div className="movie-card">
-            <img
-              src={MOVIES[mood].thumbnail}
-              alt={MOVIES[mood].name}
-              className="movie-thumb"
-            />
-            <div className="movie-title">{MOVIES[mood].name}</div>
-            <a
-              href={MOVIES[mood].link}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="main-btn movie-btn"
-            >
-              Watch Now
-            </a>
-          </div>
-          <button className="main-btn scan-again" onClick={handleScanAgain}>
-            SCAN AGAIN
+
+          {detectionResult && detectionResult.type === 'single_face' && (
+            <div style={{
+              fontSize: '48px',
+              marginBottom: '20px'
+            }}>
+              🎉
+            </div>
+          )}
+
+          <button
+            onClick={handleTryAgain}
+            style={{
+              backgroundColor: '#0f79af',
+              color: 'white',
+              border: 'none',
+              padding: '15px 30px',
+              borderRadius: '6px',
+              fontSize: '16px',
+              cursor: 'pointer',
+              width: '200px'
+            }}
+          >
+            TRY AGAIN
           </button>
         </div>
       )}
